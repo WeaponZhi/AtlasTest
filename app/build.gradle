@@ -1,0 +1,107 @@
+apply plugin: 'com.android.application'
+apply plugin: 'com.taobao.atlas'
+group = 'com.sojex.weaponzhi.atlastest'
+version = getEnvValue("versionName", "1.0.0")
+def apVersion = getEnvValue("apVersion", "");
+
+
+repositories{
+    mavenLocal()
+    jcenter()
+}
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "25.0.2"
+    defaultConfig {
+        applicationId "com.sojex.weaponzhi.atlastest"
+        minSdkVersion 14
+        targetSdkVersion 25
+        versionCode 1
+        versionName version
+        vectorDrawables.useSupportLibrary = true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug{
+            ndk{
+                abiFilters "x86","armeabi"
+            }
+        }
+    }
+}
+
+atlas{
+    atlasEnabled true
+    tBuildConfig{
+        autoStartBundles = ['com.atlas.mylibrary'] //自启动bundle配置
+        autoPackageId = true
+    }
+
+
+    patchConfigs{
+        debug{
+            createTPatch true
+        }
+    }
+    buildTypes {
+        debug {
+            if (apVersion) {
+                baseApDependency "com.sojex.weaponzhi.atlastest:AP-debug:${apVersion}@ap"
+                patchConfig patchConfigs.debug
+            }
+        }
+    }
+}
+
+String getEnvValue(key, defValue) {
+    def val = System.getProperty(key);
+    if (null != val) {
+        return val;
+    }
+    val = System.getenv(key);
+    if (null != val) {
+        return val;
+    }
+    return defValue;
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile('com.taobao.android:atlas_core:5.0.7.30@aar') {
+
+        transitive = true
+    }
+    compile 'com.taobao.android:atlasupdate:1.1.4.10@aar'
+    compile 'com.alibaba:fastjson:1.1.45.android@jar'
+    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    testCompile 'junit:junit:4.12'
+
+    bundleCompile project(':firstbundle')
+}
+
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+
+publishing {
+    repositories {
+        mavenLocal()
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifact "${project.buildDir}/outputs/apk/${project.name}-debug.ap"
+            artifactId "AP-debug"
+        }
+    }
+}
